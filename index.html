@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công Cụ Bấm Giờ Nốt Nhạc & Tạo File SRT Offline</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #16a34a;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #cbd5e1;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 16px;
+            line-height: 1.5;
+            user-select: none;
+        }
+
+        .container {
+            max-width: 980px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--border);
+        }
+
+        h1 { margin: 0 0 8px 0; font-size: 1.35rem; color: var(--primary-dark); }
+        h2 { margin: 0 0 10px 0; font-size: 1.08rem; color: var(--text); }
+
+        .folder-dropzone {
+            border: 2px dashed var(--primary);
+            background: #eff6ff;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            transition: background 0.2s;
+        }
+        .folder-dropzone.dragover { background: #dbeafe; }
+
+        .btn-group-upload {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 9px 15px;
+            font-size: 0.94rem;
+            font-weight: 600;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            background: var(--primary);
+            color: #fff;
+            transition: opacity 0.15s, transform 0.1s;
+            outline: none !important;
+        }
+        .btn:hover { opacity: 0.92; }
+        .btn:active { transform: scale(0.97); }
+        .btn-success { background: var(--success); }
+        .btn-warning { background: var(--warning); }
+        .btn-danger { background: var(--danger); }
+        .btn-secondary { background: #475569; }
+
+        /* Danh sách file MP3 */
+        .track-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .track-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            cursor: pointer;
+            background: #f8fafc;
+            transition: all 0.15s;
+        }
+        .track-card:hover { border-color: var(--primary); background: #eff6ff; }
+        .track-card.active { border: 2px solid var(--primary); background: #dbeafe; }
+        .track-name { font-weight: 700; word-break: break-word; }
+        .track-meta { font-size: 0.82rem; color: var(--muted); margin-top: 3px; }
+        .track-meta.ok { color: var(--success); font-weight: 600; }
+        .track-meta.err { color: var(--danger); font-weight: 600; }
+
+        /* Trình phát nhạc Custom (Không bị trình duyệt cướp phím) */
+        .custom-player {
+            background: #1e293b;
+            color: #fff;
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+
+        .player-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .time-clock {
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 1.55rem;
+            font-weight: 700;
+            color: #38bdf8;
+            background: #0f172a;
+            padding: 4px 12px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            letter-spacing: 1px;
+        }
+
+        .time-clock small {
+            font-size: 0.95rem;
+            color: #94a3b8;
+            font-weight: normal;
+        }
+
+        .seek-bar {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            accent-color: #38bdf8;
+        }
+
+        /* Thanh nút bấm kiêm phím tắt */
+        .action-keys-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .key-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 10px 8px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #f8fafc;
+            cursor: pointer;
+            transition: all 0.1s;
+            text-align: center;
+        }
+        .key-btn:hover { background: #e2e8f0; border-color: #94a3b8; }
+        .key-btn:active, .key-btn.flash {
+            background: #dbeafe;
+            border-color: var(--primary);
+            transform: scale(0.97);
+        }
+
+        .key-btn kbd {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 3px 9px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.88rem;
+            font-weight: 700;
+        }
+        .key-btn span {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        /* Màn hình nhắc câu */
+        .stage-box {
+            background: #0f172a;
+            color: #f8fafc;
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 16px;
+            text-align: center;
+            position: relative;
+        }
+
+        .toast-feedback {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #2563eb;
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .toast-feedback.show { opacity: 1; }
+
+        .stage-status {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 999px;
+            font-size: 0.86rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: #334155;
+            color: #38bdf8;
+        }
+        .stage-status.recording { background: #991b1b; color: #fecaca; }
+        .stage-status.interlude { background: #92400e; color: #fde68a; }
+        .stage-status.done { background: #166534; color: #bbf7d0; }
+
+        .stage-current-label {
+            font-size: 0.84rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .stage-current-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 8px 0 14px 0;
+            min-height: 2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            word-break: break-word;
+        }
+
+        .stage-next-box {
+            border-top: 1px solid #334155;
+            padding-top: 10px;
+            color: #cbd5e1;
+            font-size: 0.96rem;
+        }
+        .stage-next-box span { color: #fbbf24; font-weight: 600; }
+
+        /* Danh sách câu */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .sentences-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .sentence-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+        }
+        .sentence-row:last-child { border-bottom: none; }
+        .sentence-row:hover { background: #f8fafc; }
+        .sentence-row.active-recording { background: #eff6ff; border-left: 4px solid var(--primary); }
+        .sentence-row.selected-loop { background: #fef9c3; }
+
+        .sentence-checkbox { margin-top: 5px; transform: scale(1.25); cursor: pointer; }
+        .sentence-idx { font-weight: 700; color: var(--muted); min-width: 28px; }
+        .sentence-body { flex: 1; min-width: 0; }
+        .sentence-note { font-weight: 600; font-size: 1.02rem; word-break: break-word; }
+
+        .sentence-time {
+            margin-top: 4px;
+            font-family: monospace;
+            font-size: 0.84rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .badge-srt { background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+        .badge-raw { background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- BƯỚC 1: NẠP FILE -->
+    <div class="card">
+        <h1>🎵 Công Cụ Bấm Giờ Nốt Nhạc & Xuất SRT Offline</h1>
+        <div class="folder-dropzone" id="dropZone">
+            <div class="btn-group-upload">
+                <label class="btn">
+                    📂 Chọn Cả Thư Mục
+                    <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none;">
+                </label>
+                <label class="btn btn-success">
+                    📄 Chọn Các File Lẻ (.mp3 & .txt)
+                    <input type="file" id="filesInput" multiple accept=".mp3,.txt" style="display:none;">
+                </label>
+            </div>
+            <div style="margin-top: 8px; font-size: 0.86rem; color: var(--muted);">
+                Hoặc kéo & thả trực tiếp các file <code>.mp3</code> và <code>.txt</code> vào khung này.
+            </div>
+        </div>
+
+        <div id="trackListSection" style="display:none; margin-top: 14px;">
+            <h2>Danh sách bài tìm thấy (Bấm chọn bài để thao tác):</h2>
+            <div class="track-list" id="trackList"></div>
+        </div>
+    </div>
+
+    <!-- BƯỚC 2: BẤM GIỜ & XUẤT SRT -->
+    <div class="card" id="workspaceCard" style="display:none;">
+        <div class="toolbar">
+            <h2 id="currentTrackTitle" style="margin:0;">Chưa chọn bài</h2>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button type="button" class="btn btn-warning" tabindex="-1" onfocus="this.blur()" onclick="resetAllTimestamps(true)">🔄 Làm lại từ đầu</button>
+                <button type="button" class="btn btn-success" tabindex="-1" onfocus="this.blur()" onclick="downloadSRT()">💾 Tải file .SRT</button>
+            </div>
+        </div>
+
+        <!-- Thẻ audio ẩn không dùng controls mặc định để tránh kẹt phím Space/Arrow -->
+        <audio id="audioPlayer" preload="metadata"></audio>
+
+        <!-- Bộ điều khiển nhạc Custom -->
+        <div class="custom-player">
+            <div class="player-top-row">
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <button type="button" class="btn" id="btnPlayPause" tabindex="-1" onfocus="this.blur()" onclick="togglePlayPause()">
+                        ▶️ Phát nhạc (Phím P)
+                    </button>
+                    <select id="speedSelect" tabindex="-1" onchange="changeSpeed(this.value); this.blur();" style="padding:7px 10px; border-radius:6px; font-weight:600; border:none;">
+                        <option value="0.5">Tốc độ: 0.5x</option>
+                        <option value="0.75">Tốc độ: 0.75x</option>
+                        <option value="0.9">Tốc độ: 0.9x</option>
+                        <option value="1" selected>Tốc độ: 1.0x (Chuẩn)</option>
+                        <option value="1.25">Tốc độ: 1.25x</option>
+                        <option value="1.5">Tốc độ: 1.5x</option>
+                    </select>
+                </div>
+                <div class="time-clock">
+                    <span id="clockCurrent">00:00:00,000</span>
+                    <small>/ <span id="clockDuration">00:00:00,000</span></small>
+                </div>
+            </div>
+            <input type="range" id="seekBar" class="seek-bar" min="0" max="100" step="0.01" value="0" tabindex="-1">
+        </div>
+
+        <!-- Thanh phím tắt kiêm nút bấm trực tiếp -->
+        <div class="action-keys-bar">
+            <div class="key-btn" id="keyBtnSpace" onclick="handleSpacePress()">
+                <kbd>Space (Dấu cách)</kbd>
+                <span>Bắt đầu câu 1 / Qua câu kế</span>
+            </div>
+            <div class="key-btn" id="keyBtnEnter" onclick="handleEnterPress()">
+                <kbd>Enter</kbd>
+                <span>Ngắt cuối câu (Nghỉ nhạc dạo)</span>
+            </div>
+            <div class="key-btn" id="keyBtnBackspace" onclick="handleBackspaceUndo()">
+                <kbd>Backspace</kbd>
+                <span>Undo câu vừa bấm & Lùi 3s</span>
+            </div>
+            <div class="key-btn" id="keyBtnLeft" onclick="seekRelative(-1)">
+                <kbd>⬅️ Mũi tên trái</kbd>
+                <span>Tua lùi 1 giây (-1s)</span>
+            </div>
+            <div class="key-btn" id="keyBtnRight" onclick="seekRelative(1)">
+                <kbd>➡️ Mũi tên phải</kbd>
+                <span>Tua tiến 1 giây (+1s)</span>
+            </div>
+        </div>
+
+        <!-- Màn hình nhắc câu -->
+        <div class="stage-box">
+            <div class="toast-feedback" id="toastFeedback">Đã ghi mốc!</div>
+            <div class="stage-status" id="stageStatus">SẴN SÀNG - Nhấn SPACE để bắt đầu Câu 1</div>
+            <div class="stage-current-label" id="stageCurrentLabel">Câu chuẩn bị bấm:</div>
+            <div class="stage-current-text" id="stageCurrentText">---</div>
+            <div class="stage-next-box">
+                Câu tiếp theo: <span id="stageNextText">---</span>
+            </div>
+        </div>
+
+        <!-- Danh sách câu & Lặp câu -->
+        <div class="toolbar">
+            <div>
+                <strong>📑 Danh sách nốt nhạc (<span id="sentenceCount">0</span> câu)</strong>
+                <div style="font-size: 0.82rem; color: var(--muted);">
+                    Đã lọc bỏ các câu kẹp giữa <code>! @ # $ % ^ & * ( )</code> • Tự động tính <code>[T_đầu - 1s --> T_cuối + 1s]</code>
+                </div>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button type="button" class="btn" id="btnLoopSelected" tabindex="-1" onfocus="this.blur()" onclick="toggleLoopSelected()">🔁 Lặp các câu đã chọn</button>
+                <button type="button" class="btn btn-secondary" tabindex="-1" onfocus="this.blur()" onclick="clearLoopSelection()">Bỏ chọn lặp</button>
+            </div>
+        </div>
+
+        <div class="sentences-container" id="sentencesContainer"></div>
+    </div>
+</div>
+
+<script>
+    const folderInput = document.getElementById('folderInput');
+    const filesInput = document.getElementById('filesInput');
+    const dropZone = document.getElementById('dropZone');
+    const trackListSection = document.getElementById('trackListSection');
+    const trackListDiv = document.getElementById('trackList');
+    const workspaceCard = document.getElementById('workspaceCard');
+    const currentTrackTitle = document.getElementById('currentTrackTitle');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const btnPlayPause = document.getElementById('btnPlayPause');
+    const clockCurrent = document.getElementById('clockCurrent');
+    const clockDuration = document.getElementById('clockDuration');
+    const seekBar = document.getElementById('seekBar');
+    const toastFeedback = document.getElementById('toastFeedback');
+    const stageStatus = document.getElementById('stageStatus');
+    const stageCurrentLabel = document.getElementById('stageCurrentLabel');
+    const stageCurrentText = document.getElementById('stageCurrentText');
+    const stageNextText = document.getElementById('stageNextText');
+    const sentenceCountSpan = document.getElementById('sentenceCount');
+    const sentencesContainer = document.getElementById('sentencesContainer');
+    const btnLoopSelected = document.getElementById('btnLoopSelected');
+
+    let tracks = [];
+    let activeTrack = null;
+    let currentIdx = 0;
+    let waitingForStart = true;
+    let historyStack = [];
+
+    let isLooping = false;
+    let loopStartSec = 0;
+    let loopEndSec = 0;
+    let toastTimer = null;
+
+    // --- 1. NẠP FILE MP3 & TXT ---
+    folderInput.addEventListener('change', (e) => {
+        processUploadedFiles(e.target.files);
+        folderInput.blur();
+    });
+    filesInput.addEventListener('change', (e) => {
+        processUploadedFiles(e.target.files);
+        filesInput.blur();
+    });
+
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        processUploadedFiles(e.dataTransfer.files);
+    });
+
+    function getBaseName(filename) {
+        return filename.replace(/\.[^/.]+$/, "").trim();
+    }
+
+    function normalizeKey(filename) {
+        return getBaseName(filename).normalize('NFC').toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    // Lọc các câu nằm giữa !@#$%^&*()
+    function parseAndFilterTxt(rawText) {
+        const lines = rawText.replace(/\r/g, '').split('\n');
+        const validSentences = [];
+        const inlineSymbolsRegex = /\([^)]*\)|([!@#$%^&*]).*?\1/g;
+
+        for (let rawLine of lines) {
+            let line = rawLine.trim();
+            if (!line) continue;
+
+            // Nếu dòng bắt đầu và kết thúc bằng bất kỳ dấu nào trong !@#$%^&*() thì bỏ qua
+            if (/^[!@#$%^&*(]/.test(line) && /[!@#$%^&*)]$/.test(line)) {
+                continue;
+            }
+
+            // Xóa phần nằm giữa các dấu !@#$%^&*() trên cùng dòng
+            let cleaned = line.replace(inlineSymbolsRegex, '').trim();
+            if (!cleaned) continue;
+
+            validSentences.push({
+                text: cleaned,
+                rawStart: null,
+                rawEnd: null,
+                srtStart: null,
+                srtEnd: null,
+                selected: false
+            });
+        }
+        return validSentences;
+    }
+
+    async function processUploadedFiles(fileList) {
+        if (!fileList || fileList.length === 0) return;
+        const files = Array.from(fileList);
+
+        const mp3Files = [];
+        const txtMap = new Map();
+
+        for (const f of files) {
+            const lower = f.name.toLowerCase();
+            if (lower === 'ipa.txt') continue;
+            const key = normalizeKey(f.name);
+            if (lower.endsWith('.mp3')) {
+                mp3Files.push({ key, file: f });
+            } else if (lower.endsWith('.txt')) {
+                txtMap.set(key, f);
+            }
+        }
+
+        const loadedTracks = [];
+        for (const item of mp3Files) {
+            let txtFile = txtMap.get(item.key) || null;
+            // Nếu chỉ chọn 1 file mp3 và 1 file txt hơi lệch tên thì vẫn tự ghép cặp
+            if (!txtFile && mp3Files.length === 1 && txtMap.size === 1) {
+                txtFile = Array.from(txtMap.values())[0];
+            }
+
+            let sentences = [];
+            if (txtFile) {
+                const rawContent = await txtFile.text();
+                sentences = parseAndFilterTxt(rawContent);
+            }
+
+            loadedTracks.push({
+                key: item.key,
+                title: getBaseName(item.file.name).normalize('NFC'),
+                mp3File: item.file,
+                txtFile,
+                sentences
+            });
+        }
+
+        loadedTracks.sort((a, b) => a.title.localeCompare(b.title, 'vi'));
+        tracks = loadedTracks;
+        renderTrackList();
+
+        // Tự động chọn ngay bài đầu tiên có file txt để người dùng thao tác luôn
+        const firstValidIdx = tracks.findIndex(t => t.txtFile && t.sentences.length > 0);
+        if (firstValidIdx !== -1) {
+            selectTrack(firstValidIdx);
+        } else if (tracks.length > 0) {
+            selectTrack(0);
+        }
+    }
+
+    function renderTrackList() {
+        trackListDiv.innerHTML = '';
+        trackListSection.style.display = 'block';
+
+        if (tracks.length === 0) {
+            trackListDiv.innerHTML = '<div style="color:var(--danger); font-weight:600;">⚠️ Không tìm thấy file .mp3 nào!</div>';
+            return;
+        }
+
+        tracks.forEach((t, idx) => {
+            const card = document.createElement('div');
+            card.className = 'track-card' + (activeTrack === t ? ' active' : '');
+            const hasTxt = !!t.txtFile;
+            card.innerHTML = `
+                <div class="track-name">${idx + 1}. ${t.title}.mp3</div>
+                <div class="track-meta ${hasTxt ? 'ok' : 'err'}">
+                    ${hasTxt ? `✅ Đã nạp .txt (${t.sentences.length} câu nốt nhạc)` : '❌ Thiếu file .txt cùng tên'}
+                </div>
+            `;
+            card.onclick = () => selectTrack(idx);
+            trackListDiv.appendChild(card);
+        });
+    }
+
+    function selectTrack(idx) {
+        const track = tracks[idx];
+        if (!track) return;
+
+        if (document.activeElement) document.activeElement.blur();
+        stopLoopMode();
+        activeTrack = track;
+        renderTrackList();
+
+        workspaceCard.style.display = 'block';
+        currentTrackTitle.innerText = `🎵 Bài đang chọn: ${track.title}`;
+        sentenceCountSpan.innerText = track.sentences.length;
+
+        if (audioPlayer.src) URL.revokeObjectURL(audioPlayer.src);
+        audioPlayer.src = URL.createObjectURL(track.mp3File);
+        audioPlayer.playbackRate = parseFloat(document.getElementById('speedSelect').value) || 1.0;
+
+        resetAllTimestamps(false);
+
+        if (!track.txtFile) {
+            stageStatus.className = 'stage-status recording';
+            stageStatus.innerText = '⚠️ THIẾU FILE .TXT CÙNG TÊN VỚI FILE MP3 NÀY';
+            stageCurrentText.innerText = `Hãy nạp thêm file "${track.title}.txt"`;
+            return;
+        }
+
+        // Tự động phát nhạc khi chọn bài
+        audioPlayer.play().catch(() => {});
+    }
+
+    // --- 2. ĐIỀU KHIỂN ĐỒNG HỒ & TRÌNH PHÁT CUSTOM ---
+    function formatSRTTime(sec) {
+        if (sec === null || sec === undefined || isNaN(sec)) return '00:00:00,000';
+        const safeSec = Math.max(0, sec);
+        const hrs = Math.floor(safeSec / 3600);
+        const mins = Math.floor((safeSec % 3600) / 60);
+        const secs = Math.floor(safeSec % 60);
+        const ms = Math.round((safeSec - Math.floor(safeSec)) * 1000);
+        return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')},${String(ms === 1000 ? 999 : ms).padStart(3, '0')}`;
+    }
+
+    function togglePlayPause() {
+        if (!activeTrack) return;
+        if (audioPlayer.paused) {
+            audioPlayer.play();
+        } else {
+            audioPlayer.pause();
+        }
+    }
+
+    function changeSpeed(val) {
+        audioPlayer.playbackRate = parseFloat(val) || 1.0;
+    }
+
+    audioPlayer.addEventListener('play', () => {
+        btnPlayPause.innerText = '⏸️ Tạm dừng (Phím P)';
+        btnPlayPause.classList.add('btn-warning');
+    });
+
+    audioPlayer.addEventListener('pause', () => {
+        btnPlayPause.innerText = '▶️ Phát nhạc (Phím P)';
+        btnPlayPause.classList.remove('btn-warning');
+    });
+
+    audioPlayer.addEventListener('loadedmetadata', () => {
+        seekBar.max = audioPlayer.duration || 100;
+        clockDuration.innerText = formatSRTTime(audioPlayer.duration || 0);
+    });
+
+    seekBar.addEventListener('input', () => {
+        audioPlayer.currentTime = parseFloat(seekBar.value) || 0;
+        clockCurrent.innerText = formatSRTTime(audioPlayer.currentTime);
+    });
+    seekBar.addEventListener('change', () => seekBar.blur());
+
+    // Cập nhật đồng hồ mili-giây mượt mà
+    function updateClockLoop() {
+        if (activeTrack && !isNaN(audioPlayer.currentTime)) {
+            clockCurrent.innerText = formatSRTTime(audioPlayer.currentTime);
+            if (!seekBar.matches(':active')) {
+                seekBar.value = audioPlayer.currentTime;
+            }
+            if (isLooping && audioPlayer.currentTime >= loopEndSec) {
+                audioPlayer.currentTime = loopStartSec;
+                if (audioPlayer.paused) audioPlayer.play();
+            }
+        }
+        requestAnimationFrame(updateClockLoop);
+    }
+    requestAnimationFrame(updateClockLoop);
+
+    function showToast(msg, btnId) {
+        toastFeedback.innerText = msg;
+        toastFeedback.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toastFeedback.classList.remove('show'), 1100);
+
+        if (btnId) {
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                btn.classList.add('flash');
+                setTimeout(() => btn.classList.remove('flash'), 150);
+            }
+        }
+    }
+
+    // --- 3. XỬ LÝ 5 PHÍM TẮT: SPACE, ENTER, BACKSPACE, TRÁI, PHẢI ---
+    function applyOffsets(sentence) {
+        sentence.srtStart = (sentence.rawStart !== null) ? Math.max(0, sentence.rawStart - 1.0) : null;
+        sentence.srtEnd = (sentence.rawEnd !== null) ? (sentence.rawEnd + 1.0) : null;
+    }
+
+    function saveStateToHistory() {
+        if (!activeTrack) return;
+        historyStack.push({
+            currentIdx,
+            waitingForStart,
+            snapshot: activeTrack.sentences.map(s => ({
+                rawStart: s.rawStart,
+                rawEnd: s.rawEnd,
+                srtStart: s.srtStart,
+                srtEnd: s.srtEnd
+            }))
+        });
+    }
+
+    // PHÍM SPACE: Luôn ghi nhận mốc thời gian (và tự phát nhạc nếu nhạc đang dừng)
+    function handleSpacePress() {
+        if (!activeTrack || !activeTrack.txtFile || activeTrack.sentences.length === 0) return;
+        if (isLooping) stopLoopMode();
+
+        // Nếu nhạc đang dừng, cho phát tiếp đồng thời vẫn ghi mốc thời gian
+        if (audioPlayer.paused) {
+            audioPlayer.play().catch(() => {});
+        }
+
+        const sList = activeTrack.sentences;
+        if (currentIdx >= sList.length) {
+            showToast('✅ Đã bấm xong hết các câu!', 'keyBtnSpace');
+            return;
+        }
+
+        saveStateToHistory();
+        const now = audioPlayer.currentTime;
+
+        if (waitingForStart) {
+            sList[currentIdx].rawStart = now;
+            applyOffsets(sList[currentIdx]);
+            waitingForStart = false;
+            showToast(`⏱️ Bắt đầu Câu ${currentIdx + 1}: ${formatSRTTime(now)}`, 'keyBtnSpace');
+        } else {
+            sList[currentIdx].rawEnd = now;
+            applyOffsets(sList[currentIdx]);
+
+            currentIdx++;
+            if (currentIdx < sList.length) {
+                sList[currentIdx].rawStart = now;
+                applyOffsets(sList[currentIdx]);
+                waitingForStart = false;
+                showToast(`⏱️ Qua Câu ${currentIdx + 1}: ${formatSRTTime(now)}`, 'keyBtnSpace');
+            } else {
+                updateStageUI();
+                renderSentencesList();
+                showToast('🎉 Hoàn tất! Đang tải file SRT...', 'keyBtnSpace');
+                downloadSRT();
+                return;
+            }
+        }
+
+        updateStageUI();
+        renderSentencesList();
+        scrollToSentence(currentIdx);
+    }
+
+    // PHÍM ENTER: Ngắt cuối câu hiện tại để nghỉ nhạc dạo
+    function handleEnterPress() {
+        if (!activeTrack || !activeTrack.txtFile || activeTrack.sentences.length === 0) return;
+        const sList = activeTrack.sentences;
+
+        if (currentIdx >= sList.length) return;
+        if (waitingForStart) {
+            showToast('⚠️ Hãy nhấn SPACE để bắt đầu câu trước!', 'keyBtnEnter');
+            return;
+        }
+
+        saveStateToHistory();
+        const now = audioPlayer.currentTime;
+
+        sList[currentIdx].rawEnd = now;
+        applyOffsets(sList[currentIdx]);
+
+        const finishedNum = currentIdx + 1;
+        currentIdx++;
+        waitingForStart = true;
+
+        showToast(`⏸️ Đã ngắt cuối Câu ${finishedNum} (Nghỉ nhạc dạo)`, 'keyBtnEnter');
+        updateStageUI();
+        renderSentencesList();
+
+        if (currentIdx >= sList.length) {
+            downloadSRT();
+        } else {
+            scrollToSentence(currentIdx);
+        }
+    }
+
+    // PHÍM BACKSPACE: Undo mốc vừa bấm & lùi 3 giây
+    function handleBackspaceUndo() {
+        if (!activeTrack) return;
+
+        audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - 3.0);
+
+        if (historyStack.length === 0) {
+            showToast('⏪ Đã lùi 3 giây (Chưa có mốc để Undo)', 'keyBtnBackspace');
+            return;
+        }
+
+        const lastState = historyStack.pop();
+        currentIdx = lastState.currentIdx;
+        waitingForStart = lastState.waitingForStart;
+
+        activeTrack.sentences.forEach((s, i) => {
+            s.rawStart = lastState.snapshot[i].rawStart;
+            s.rawEnd = lastState.snapshot[i].rawEnd;
+            s.srtStart = lastState.snapshot[i].srtStart;
+            s.srtEnd = lastState.snapshot[i].srtEnd;
+        });
+
+        showToast(`↩️ Đã Undo về Câu ${currentIdx + 1} & Lùi 3s`, 'keyBtnBackspace');
+        updateStageUI();
+        renderSentencesList();
+        scrollToSentence(currentIdx);
+    }
+
+    // PHÍM MŨI TÊN TRÁI / PHẢI: Lùi 1s / Tiến 1s
+    function seekRelative(deltaSec) {
+        if (!activeTrack) return;
+        const maxDur = audioPlayer.duration || Infinity;
+        audioPlayer.currentTime = Math.max(0, Math.min(maxDur, audioPlayer.currentTime + deltaSec));
+        showToast(deltaSec < 0 ? '⏪ Lùi 1 giây (-1s)' : '⏩ Tiến 1 giây (+1s)', deltaSec < 0 ? 'keyBtnLeft' : 'keyBtnRight');
+    }
+
+    function resetAllTimestamps(askConfirm = true) {
+        if (!activeTrack) return;
+        if (askConfirm && historyStack.length > 0) {
+            if (!confirm('Xóa toàn bộ mốc thời gian vừa bấm của bài này để làm lại từ đầu?')) return;
+        }
+        stopLoopMode();
+        historyStack = [];
+        currentIdx = 0;
+        waitingForStart = true;
+        activeTrack.sentences.forEach(s => {
+            s.rawStart = null;
+            s.rawEnd = null;
+            s.srtStart = null;
+            s.srtEnd = null;
+        });
+        audioPlayer.currentTime = 0;
+        updateStageUI();
+        renderSentencesList();
+    }
+
+    // --- 4. CẬP NHẬT GIAO DIỆN ---
+    function updateStageUI() {
+        if (!activeTrack || !activeTrack.txtFile) return;
+        const sList = activeTrack.sentences;
+
+        if (sList.length === 0) {
+            stageStatus.className = 'stage-status recording';
+            stageStatus.innerText = '⚠️ FILE TXT KHÔNG CÓ CÂU HỢP LỆ';
+            stageCurrentText.innerText = 'Tất cả các dòng đều trống hoặc nằm trong dấu !@#$%^&*()';
+            stageNextText.innerText = '---';
+            return;
+        }
+
+        if (currentIdx >= sList.length) {
+            stageStatus.className = 'stage-status done';
+            stageStatus.innerText = '✅ ĐÃ HOÀN TẤT TOÀN BỘ CÂU - ĐÃ TẢI FILE SRT';
+            stageCurrentLabel.innerText = 'Trạng thái:';
+            stageCurrentText.innerText = 'Hoàn thành 100%!';
+            stageNextText.innerText = 'Không còn câu tiếp theo';
+            return;
+        }
+
+        const currSentence = sList[currentIdx];
+        const nextSentence = (currentIdx + 1 < sList.length) ? sList[currentIdx + 1] : null;
+
+        if (waitingForStart) {
+            stageStatus.className = 'stage-status interlude';
+            stageStatus.innerText = `⏸️ CHỜ BẮT ĐẦU CÂU ${currentIdx + 1}/${sList.length} — Nhấn SPACE khi vào câu`;
+            stageCurrentLabel.innerText = `Chuẩn bị bấm bắt đầu Câu ${currentIdx + 1}:`;
+        } else {
+            stageStatus.className = 'stage-status recording';
+            stageStatus.innerText = `🔴 ĐANG CHẠY CÂU ${currentIdx + 1}/${sList.length} — Nhấn SPACE để sang câu kế (hoặc ENTER để nghỉ nhạc dạo)`;
+            stageCurrentLabel.innerText = `Đang ghi thời gian Câu ${currentIdx + 1}:`;
+        }
+
+        stageCurrentText.innerText = currSentence.text;
+        stageNextText.innerText = nextSentence
+            ? `(Câu ${currentIdx + 2}) ${nextSentence.text}`
+            : '--- Hết bài (Nhấn SPACE để kết thúc câu cuối) ---';
+    }
+
+    function renderSentencesList() {
+        if (!activeTrack) return;
+        sentencesContainer.innerHTML = '';
+
+        activeTrack.sentences.forEach((s, idx) => {
+            const row = document.createElement('div');
+            let rowClass = 'sentence-row';
+            if (idx === currentIdx && currentIdx < activeTrack.sentences.length) {
+                rowClass += ' active-recording';
+            }
+            if (s.selected) {
+                rowClass += ' selected-loop';
+            }
+            row.className = rowClass;
+            row.id = `sentence-row-${idx}`;
+
+            const hasFullTime = (s.srtStart !== null && s.srtEnd !== null);
+            const srtRangeText = hasFullTime
+                ? `${formatSRTTime(s.srtStart)} --> ${formatSRTTime(s.srtEnd)}`
+                : (s.srtStart !== null ? `${formatSRTTime(s.srtStart)} --> (Đang chạy...)` : 'Chưa bấm giờ');
+
+            const rawInfo = (s.rawStart !== null || s.rawEnd !== null)
+                ? `Mốc bấm gốc: T_đầu=${s.rawStart !== null ? s.rawStart.toFixed(2) + 's' : '--'} | T_cuối=${s.rawEnd !== null ? s.rawEnd.toFixed(2) + 's' : '--'}`
+                : '';
+
+            row.innerHTML = `
+                <input type="checkbox" class="sentence-checkbox" tabindex="-1" ${s.selected ? 'checked' : ''}>
+                <div class="sentence-idx">${idx + 1}.</div>
+                <div class="sentence-body">
+                    <div class="sentence-note">${s.text}</div>
+                    <div class="sentence-time">
+                        <span class="badge-srt">SRT (-1s/+1s): ${srtRangeText}</span>
+                        ${rawInfo ? `<span class="badge-raw">${rawInfo}</span>` : ''}
+                    </div>
+                </div>
+            `;
+
+            row.onclick = (e) => {
+                if (e.target.type !== 'checkbox') {
+                    s.selected = !s.selected;
+                } else {
+                    s.selected = e.target.checked;
+                    e.target.blur();
+                }
+                renderSentencesList();
+                updateLoopRangeIfActive();
+            };
+
+            sentencesContainer.appendChild(row);
+        });
+    }
+
+    function scrollToSentence(idx) {
+        const el = document.getElementById(`sentence-row-${idx}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // --- 5. LẶP NHIỀU CÂU (TỪ ĐẦU CÂU ĐẦU TIÊN -> CUỐI CÂU CUỐI CÙNG) ---
+    function getSelectedSentencesWithTime() {
+        if (!activeTrack) return [];
+        return activeTrack.sentences.filter(s => s.selected && s.srtStart !== null && s.srtEnd !== null);
+    }
+
+    function toggleLoopSelected() {
+        if (isLooping) {
+            stopLoopMode();
+            return;
+        }
+        const selected = getSelectedSentencesWithTime();
+        if (selected.length === 0) {
+            alert('Vui lòng tích chọn ít nhất 1 câu đã có đầy đủ thời gian bắt đầu và kết thúc!');
+            return;
+        }
+
+        loopStartSec = selected[0].srtStart;
+        loopEndSec = selected[selected.length - 1].srtEnd;
+
+        isLooping = true;
+        btnLoopSelected.classList.add('btn-danger');
+        btnLoopSelected.innerText = `🛑 Đang lặp (${formatSRTTime(loopStartSec)} ➔ ${formatSRTTime(loopEndSec)})`;
+
+        audioPlayer.currentTime = loopStartSec;
+        audioPlayer.play();
+    }
+
+    function updateLoopRangeIfActive() {
+        if (!isLooping) return;
+        const selected = getSelectedSentencesWithTime();
+        if (selected.length === 0) {
+            stopLoopMode();
+            return;
+        }
+        loopStartSec = selected[0].srtStart;
+        loopEndSec = selected[selected.length - 1].srtEnd;
+        btnLoopSelected.innerText = `🛑 Đang lặp (${formatSRTTime(loopStartSec)} ➔ ${formatSRTTime(loopEndSec)})`;
+    }
+
+    function stopLoopMode() {
+        isLooping = false;
+        btnLoopSelected.classList.remove('btn-danger');
+        btnLoopSelected.innerText = '🔁 Lặp các câu đã chọn';
+    }
+
+    function clearLoopSelection() {
+        if (!activeTrack) return;
+        activeTrack.sentences.forEach(s => s.selected = false);
+        stopLoopMode();
+        renderSentencesList();
+    }
+
+    // --- 6. XUẤT FILE .SRT ---
+    function downloadSRT() {
+        if (!activeTrack) return;
+        const blocks = [];
+        let srtIndex = 1;
+
+        activeTrack.sentences.forEach((s) => {
+            if (s.srtStart !== null && s.srtEnd !== null) {
+                blocks.push(
+                    `${srtIndex}\n${formatSRTTime(s.srtStart)} --> ${formatSRTTime(s.srtEnd)}\n${s.text}`
+                );
+                srtIndex++;
+            }
+        });
+
+        if (blocks.length === 0) {
+            alert('Chưa có câu nào hoàn tất mốc thời gian để xuất file SRT!');
+            return;
+        }
+
+        const srtContent = blocks.join('\n\n') + '\n';
+        const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${activeTrack.title}.srt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // --- 7. BẮT TOÀN BỘ SỰ KIỆN BÀN PHÍM (CHẶN CẢ KEYDOWN VÀ KEYUP MẶC ĐỊNH) ---
+    const HANDLED_KEYS = new Set(['Space', 'Enter', 'Backspace', 'ArrowLeft', 'ArrowRight', 'KeyP']);
+
+    window.addEventListener('keydown', (e) => {
+        if (!activeTrack) return;
+        if (!HANDLED_KEYS.has(e.code)) return;
+
+        // Chặn tuyệt đối hành vi mặc định của trình duyệt (Play/Pause, cuộn trang, kích hoạt nút...)
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Chống giữ đè phím làm nhảy nhiều câu liên tiếp
+        if (e.repeat && (e.code === 'Space' || e.code === 'Enter' || e.code === 'Backspace' || e.code === 'KeyP')) {
+            return;
+        }
+
+        if (e.code === 'Space') {
+            handleSpacePress();
+        } else if (e.code === 'Enter') {
+            handleEnterPress();
+        } else if (e.code === 'Backspace') {
+            handleBackspaceUndo();
+        } else if (e.code === 'ArrowLeft') {
+            seekRelative(-1.0);
+        } else if (e.code === 'ArrowRight') {
+            seekRelative(1.0);
+        } else if (e.code === 'KeyP') {
+            togglePlayPause();
+        }
+    }, true);
+
+    window.addEventListener('keyup', (e) => {
+        if (!activeTrack) return;
+        if (HANDLED_KEYS.has(e.code)) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }, true);
+</script>
+</body>
+</html>
