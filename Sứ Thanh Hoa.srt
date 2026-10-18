@@ -1,51 +1,51 @@
 1
-00:00:15,839 --> 00:00:23,292
+00:00:15,839 --> 00:00:22,292
 sol fa re fa, fa re fa, fa re fa re do
 
 2
-00:00:21,292 --> 00:00:27,646
+00:00:22,292 --> 00:00:26,646
 sol fa re fa, fa re fa, fa la sol fa fa
 
 3
-00:00:25,646 --> 00:00:32,228
+00:00:26,646 --> 00:00:31,228
 do re la la, la sol la, la sol la Do2 la
 
 4
-00:00:30,228 --> 00:00:36,644
+00:00:31,228 --> 00:00:35,644
 la la la sol sol sol sol fa la sol-la-sol
 
 5
-00:00:34,644 --> 00:00:41,090
+00:00:35,644 --> 00:00:40,090
 sol fa re fa, fa re fa, fa re fa re do
 
 6
-00:00:39,090 --> 00:00:45,429
+00:00:40,090 --> 00:00:44,429
 do re la Do2, Do2 la Do2, Do2 la sol fa fa
 
 7
-00:00:43,429 --> 00:00:53,408
+00:00:44,429 --> 00:00:52,408
 sol fa sol la sol fa-sol fa fa re sol fa fa-re fa, fa fa
 
 8
-00:00:51,408 --> 00:00:58,899
+00:00:52,408 --> 00:00:57,899
 Do2 Do2 la sol-la re, sol la Do2 la sol
 
 9
-00:00:56,899 --> 00:01:03,313
+00:00:57,899 --> 00:01:02,313
 Do2 Do2 la sol-la do, sol la Do2 sol fa
 
 10
-00:01:01,313 --> 00:01:12,278
+00:01:02,313 --> 00:01:11,278
 fa sol la Do2-Re2 Do2, la Do2 la la sol sol fa sol fa sol, fa sol la Do2 la
 
 11
-00:01:10,278 --> 00:01:16,635
+00:01:11,278 --> 00:01:15,635
 Do2 Do2 la sol-la re, sol la Do2 la sol
 
 12
-00:01:14,635 --> 00:01:21,044
+00:01:15,635 --> 00:01:20,044
 Do2 Do2 la sol-la do, sol la Do2 sol fa
 
 13
-00:01:19,044 --> 00:01:30,716
+00:01:20,044 --> 00:01:34,716
 fa sol la Do2-Re2 Do2, la Do2 la la sol sol do la sol sol fa
