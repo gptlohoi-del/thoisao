@@ -1,7 +1,7 @@
 {
   "id": "/kinh-chanh-tinh-tan/",
-  "name": "Kinh ENG-VIE",
-  "short_name": "Kinh ENG-VIE",
+  "name": "NHẠC",
+  "short_name": "NHẠC",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
