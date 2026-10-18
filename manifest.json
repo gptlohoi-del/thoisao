@@ -1,0 +1,17 @@
+{
+  "id": "/kinh-chanh-tinh-tan/",
+  "name": "Kinh ENG-VIE",
+  "short_name": "Kinh ENG-VIE",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2c3e50",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/256/10815/10815635.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
