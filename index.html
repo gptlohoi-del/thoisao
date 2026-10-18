@@ -573,6 +573,18 @@
             cursor: pointer;
             margin: 0;
         }
+        .setting-num-input {
+            width: 70px;
+            height: 30px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.92em;
+            color: #2c3e50;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            outline: none;
+            padding: 2px 4px;
+        }
         .setting-val {
             font-size: 0.82em;
             font-weight: bold;
@@ -757,6 +769,19 @@
                     </div>
                 </div>
 
+                <div class="setting-group">
+                    <div class="setting-group-title">⏱️ Bù trừ thời gian khi lặp câu</div>
+                    <div class="setting-row">
+                        <span class="setting-label">Cộng/trừ đầu & cuối (giây):</span>
+                        <div class="setting-controls">
+                            <button type="button" class="btn-step-font" onclick="stepLoopPadding(-0.1)">-</button>
+                            <input type="number" class="setting-num-input" id="inputLoopPadding" value="1.0" step="0.1" oninput="updateLoopPaddingSetting()">
+                            <button type="button" class="btn-step-font" onclick="stepLoopPadding(0.1)">+</button>
+                            <span class="setting-val" id="valLoopPadding">±1.0s</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="range-modal-actions">
                     <button type="button" class="btn-secondary" onclick="autoFitFontForDevice()">📱 Tự vừa màn hình</button>
                     <button type="button" class="btn-apply-loop" onclick="closeRangeModal()">✅ Xong</button>
@@ -788,6 +813,7 @@
         
         let abState = 0; let loopA = 0; let loopB = 0; let isABLoopMode = false;
         let selectedSentences = []; let isSentenceLoopMode = false;
+        let loopTimePadding = 1.0;
 
         function isRunningOnPC() {
             return false;
@@ -887,6 +913,42 @@
         function autoFitFontForDevice() {
             try { localStorage.removeItem('kinh_font_settings'); } catch (e) {}
             loadSavedFontSizeSettings();
+        }
+
+        function loadSavedLoopPadding() {
+            try {
+                const saved = localStorage.getItem('kinh_loop_padding');
+                if (saved !== null && !isNaN(parseFloat(saved))) {
+                    loopTimePadding = parseFloat(saved);
+                }
+            } catch (e) {}
+            const inp = document.getElementById('inputLoopPadding');
+            const valSpan = document.getElementById('valLoopPadding');
+            if (inp) inp.value = loopTimePadding;
+            if (valSpan) valSpan.innerText = `±${Number(loopTimePadding).toFixed(1)}s`;
+        }
+
+        function stepLoopPadding(delta) {
+            const inp = document.getElementById('inputLoopPadding');
+            if (!inp) return;
+            let current = parseFloat(inp.value);
+            if (isNaN(current)) current = 1.0;
+            let nextVal = Math.round((current + delta) * 10) / 10;
+            inp.value = nextVal.toFixed(1);
+            updateLoopPaddingSetting();
+        }
+
+        function updateLoopPaddingSetting() {
+            const inp = document.getElementById('inputLoopPadding');
+            const valSpan = document.getElementById('valLoopPadding');
+            if (!inp) return;
+            let val = parseFloat(inp.value);
+            if (isNaN(val)) val = 0;
+            loopTimePadding = Math.round(val * 100) / 100;
+            if (valSpan) valSpan.innerText = `±${Number(loopTimePadding).toFixed(1)}s`;
+            try {
+                localStorage.setItem('kinh_loop_padding', loopTimePadding.toString());
+            } catch (e) {}
         }
 
         function switchModalTab(mode) {
@@ -1171,6 +1233,7 @@
 
             loadSavedFontSizeSettings();
             loadSavedFontSizeSettings();
+            loadSavedLoopPadding();
 
             const onPC = isRunningOnPC();
             if (onPC) {
@@ -1427,7 +1490,7 @@
                     const btn = document.getElementById('btnToggleLoop');
                     btn.classList.add('active');
                     btn.innerText = "🛑 Đang lặp (Bấm để Dừng)";
-                    media.currentTime = sentences[selectedSentences[0]].start;
+                    media.currentTime = Math.max(0, sentences[selectedSentences[0]].start - loopTimePadding);
                     media.play();
                 } else { stopSentenceLoop(); }
             } else if (isSentenceLoopMode && selectedSentences.length === 0) { stopSentenceLoop(); }
@@ -1442,7 +1505,7 @@
                 const btn = document.getElementById('btnToggleLoop');
                 btn.classList.add('active');
                 btn.innerText = "🛑 Đang lặp (Bấm để Dừng)";
-                media.currentTime = sentences[selectedSentences[0]].start;
+                media.currentTime = Math.max(0, sentences[selectedSentences[0]].start - loopTimePadding);
                 media.play();
             }
         }
@@ -1566,7 +1629,11 @@
                 }
             }
             blocks.push(currentBlock);
-            return blocks;
+            return blocks.map(b => ({
+                start: Math.max(0, b.start - loopTimePadding),
+                end: b.end + loopTimePadding,
+                indices: b.indices
+            }));
         }
 
         function updateHighlight(index) {
