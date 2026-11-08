@@ -22,6 +22,16 @@
 
 **Không cần:** tạo tag Git, sửa thủ công versionCode/versionName, nhập GitHub owner/repo trong ứng dụng, tạo máy chủ OTA, WorkManager, GitHub token cho app. Trong workflow, GitHub tự lấy tên repository, tự sửa số phiên bản và tự dùng `GITHUB_TOKEN` tích hợp để đăng Release. Repo phải **công khai** để app kiểm tra bản phát hành mà không cần đăng nhập. Bạn vẫn có thể nhập owner/repo trong phần Cài đặt nếu build APK ngoài GitHub Actions.
 
+## Đã sửa lỗi GitHub Actions: `Failed to find package 'tools'`
+
+Nếu bản repo cũ của bạn bị dừng ở bước `android-actions/setup-android@v3` và báo lỗi `sdkmanager tools`, hãy thay **cả hai** file `.github/workflows/ci.yml` và `.github/workflows/release.yml` bằng phiên bản trong repo này.
+
+Nguyên nhân: Google đã ngừng cung cấp gói SDK cũ `tools`. Repo này chuyển sang `android-actions/setup-android@v4` và chỉ cài `platform-tools`. Đây là lỗi ở bước thiết lập môi trường, không phải lỗi khóa ký/SRT. Không phải tạo lại khóa ký; giữ nguyên GitHub Secret `NHAC_SIGNING_BUNDLE`.
+
+Nếu đã upload bản cũ lên GitHub: mở từng file workflow trên GitHub và cập nhật 2 file, commit, rồi chạy lại **Actions → Phat hanh APK Nhac (OTA)**. Nếu release v1.0.1 chưa được tạo, có thể tiếp tục chọn `1.0.1`. Nếu release v1.0.1 đã tồn tại thì dùng số phiên bản mới cao hơn.
+
+**Lưu ý:** Đã xác định và khắc phục nguyên nhân trong log được gửi. Chưa thể xác nhận build APK thành công trên runner GitHub khi chưa chạy Actions thực tế.
+
 ## Các chức năng giữ nguyên theo yêu cầu
 
 - Đóng gói 2 bài MP3/SRT gốc để nghe offline; không cần `IPA.txt`, không tự can thiệp mốc SRT bị chồng nhau.
