@@ -1,0 +1,42 @@
+name: Test and build debug APK
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check SRT parser
+        run: node --test tests/*.test.js
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Configure GitHub repository for OTA in debug build
+        env:
+          NHAC_REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 - <<'PYCODE'
+          import json, os
+          from pathlib import Path
+          file = Path('app/src/main/assets/www/app-config.json')
+          config = json.loads(file.read_text(encoding='utf-8'))
+          config['githubOwner'], config['githubRepo'] = os.environ['NHAC_REPOSITORY'].split('/', 1)
+          file.write_text(json.dumps(config, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PYCODE
+      - name: Build debug
+        run: gradle --no-daemon :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NHAC-debug-unsigned-for-production
+          path: app/build/outputs/apk/debug/*.apk

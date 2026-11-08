@@ -1,0 +1,27 @@
+NHAC - HUONG DAN CUC NGAN
+========================
+
+Nhan manh: GitHub khong co san khoa ky APK Android.
+Tuy nhien, ban chi can tao khoa ky Nhac MOT LAN, va GitHub se giu khoa do trong Secret.
+
+LAN DAU:
+  1) Dua full repo len mot GitHub repository cong khai.
+  2) Tren Windows co JDK17, nhap dup scripts/tao-khoa-ky-windows.bat.
+  3) GitHub > Settings > Secrets and variables > Actions > New repository secret.
+     Name: NHAC_SIGNING_BUNDLE
+     Value: Copy toan bo file NHAC_SIGNING_BUNDLE.txt vua tao.
+
+MOI LAN CAP NHAT:
+  1) Push code moi len GitHub.
+  2) Actions > Phat hanh APK Nhac (OTA) > Run workflow.
+  3) Nhap phien ban tang dan: 1.0.1 -> 1.0.2 -> 1.0.3.
+  4) GitHub Releases se co file NHAC-Vx.y.z.apk.
+
+TREN DIEN THOAI:
+  - Cai APK phat hanh lan dau tu GitHub Releases.
+  - Nhan OTA trong app de kiem tra; khi co ban moi, nhan Tai & cai APK.
+  - Android se hoi xac nhan cai dat (khong the cai am tham).
+
+KHONG GUI KHOA KY CHO NGUOI KHAC, KHONG UPLOAD KHOA KY VAO REPO.
+
+Huong dan day du: README.md

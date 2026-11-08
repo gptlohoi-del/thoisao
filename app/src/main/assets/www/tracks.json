@@ -1,0 +1,18 @@
+[
+  {
+    "id": "nghin-nam-thang-long",
+    "title": "NGHÌN NĂM THĂNG LONG 2026-Song Ca 118 tone G",
+    "audio": "audio/nghin-nam-thang-long.mp3",
+    "subtitle": "subtitles/nghin-nam-thang-long.srt",
+    "subtitleFilename": "NGHÌN NĂM THĂNG LONG 2026-Song Ca 118 tone G.srt",
+    "audioFilename": "NGHÌN NĂM THĂNG LONG 2026-Song Ca 118 tone G.mp3"
+  },
+  {
+    "id": "su-thanh-hoa",
+    "title": "Sứ Thanh Hoa",
+    "audio": "audio/su-thanh-hoa.mp3",
+    "subtitle": "subtitles/su-thanh-hoa.srt",
+    "subtitleFilename": "Sứ Thanh Hoa.srt",
+    "audioFilename": "Sứ Thanh Hoa.mp3"
+  }
+]

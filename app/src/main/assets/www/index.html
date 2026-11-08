@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#28465e">
+  <title>Nhac</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="srt.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="app-header">
+      <div><h1>Nhac</h1><span id="appVersion" class="small muted">Phiên bản 1.0.0</span></div>
+      <div class="header-buttons">
+        <button id="btnUpdate" class="outline small-btn" type="button">↻ OTA</button>
+        <button id="btnSettings" class="outline small-btn" type="button">⚙ Cài đặt</button>
+      </div>
+    </header>
+
+    <section class="card" aria-label="Trình phát nhạc">
+      <label class="heading-label" for="trackSelector">🎵 Bài nghe</label>
+      <select id="trackSelector"><option>Đang nạp bài hát...</option></select>
+      <audio id="myMedia" controls preload="metadata">Trình duyệt không hỗ trợ âm thanh.</audio>
+      <div class="number-line speed-line">
+        <label for="speedSlider">Tốc độ</label>
+        <button class="step-btn" id="speedMinus" type="button" aria-label="Giảm tốc độ">−</button>
+        <input id="speedSlider" type="range" min="0.5" max="2" step="0.05" value="1" aria-label="Tốc độ phát">
+        <button class="step-btn" id="speedPlus" type="button" aria-label="Tăng tốc độ">+</button>
+        <output id="speedValue" for="speedSlider">1.00x</output>
+      </div>
+    </section>
+
+    <section class="subtitle" id="currentSubtitle" aria-live="polite">
+      <div id="mainSubEng">Chọn bài để bắt đầu.</div>
+      <div id="mainSubVn"></div>
+    </section>
+
+    <section class="card" aria-label="Lặp danh sách câu">
+      <div class="section-title"><h2>📑 Lặp danh sách câu</h2><button id="btnRange" class="outline small-btn" type="button">Chọn nhanh</button></div>
+      <p class="hint">Tích các câu muốn nghe lặp. Nhấn ✎ để sửa nội dung hoặc thời gian câu trực tiếp khi offline.</p>
+      <div class="controls">
+        <button type="button" id="btnToggleLoop">🔄 Bắt đầu lặp</button>
+        <button type="button" id="btnClearSelection" class="outline">Xóa tất cả</button>
+        <span class="muted small" id="selectedCount">0 câu</span>
+      </div>
+      <div id="sentencesList" class="sentence-list"><p class="hint">Chưa tải nội dung SRT.</p></div>
+      <div class="file-actions">
+        <div id="srtStatus" class="small muted">SRT gốc</div>
+        <button id="btnExportSrt" type="button" class="export-btn">↓ Xuất file SRT</button>
+      </div>
+    </section>
+    <p class="footer-note">Các chỉnh sửa SRT được lưu trong ứng dụng trên điện thoại. Xuất file .srt rồi tự tải lên GitHub khi cần.</p>
+  </main>
+
+  <dialog id="rangeDialog" class="modal">
+    <form method="dialog"><div class="modal-top"><h2>Chọn nhanh câu</h2><button type="submit" class="close-btn" aria-label="Đóng">✕</button></div></form>
+    <p class="hint">Nhập số câu hoặc khoảng câu, ví dụ <b>3-8,11,15</b>. Nhập <b>*</b> để chọn tất cả.</p>
+    <input type="text" id="rangeInput" placeholder="3-8,11 hoặc *" inputmode="text">
+    <div class="controls modal-actions"><button type="button" id="btnApplyRange">Chọn</button><button type="button" id="btnApplyRangeLoop">Chọn &amp; lặp</button></div>
+  </dialog>
+
+  <dialog id="editDialog" class="modal">
+    <div class="modal-top"><h2 id="editTitle">Sửa SRT</h2><button type="button" class="close-btn" id="btnCloseEdit" aria-label="Đóng">✕</button></div>
+    <label for="editText" class="heading-label">Nội dung câu (giữ dấu | nếu có)</label>
+    <textarea id="editText" rows="5" spellcheck="false"></textarea>
+    <div class="two-fields">
+      <label>Bắt đầu <input id="editStart" type="text" inputmode="text" placeholder="00:00:00,000"></label>
+      <label>Kết thúc <input id="editEnd" type="text" inputmode="text" placeholder="00:00:00,000"></label>
+    </div>
+    <div id="editError" class="error" role="alert"></div>
+    <div class="controls modal-actions"><button id="btnSaveEdit" type="button">Lưu offline</button><button id="btnCancelEdit" class="outline" type="button">Hủy</button></div>
+  </dialog>
+
+  <dialog id="settingsDialog" class="modal settings-modal">
+    <div class="modal-top"><h2>⚙ Cài đặt</h2><button id="btnCloseSettings" type="button" class="close-btn" aria-label="Đóng">✕</button></div>
+    <p class="hint">Mỗi thanh trượt dài tối đa 50% chiều ngang màn hình. Có thể chỉnh giới hạn Min, Max, Default và Step bên dưới từng mục.</p>
+    <div id="settingControls"></div>
+    <section class="settings-group">
+      <h3>Hiển thị</h3>
+      <label class="toggle"><input id="boldMain" type="checkbox"> In đậm phụ đề chính</label>
+      <label class="toggle"><input id="boldList" type="checkbox"> In đậm chữ trong danh sách câu</label>
+      <label class="toggle"><input id="showNumber" type="checkbox"> Hiện số thứ tự câu</label>
+      <label class="toggle"><input id="showTime" type="checkbox"> Hiện thời gian câu</label>
+      <label class="toggle"><input id="showTranslation" type="checkbox"> Hiện nội dung sau dấu | (nếu có)</label>
+      <button id="resetSettings" type="button" class="outline">Khôi phục mặc định cài đặt</button>
+    </section>
+    <section class="settings-group">
+      <h3>Cập nhật OTA qua GitHub</h3>
+      <p id="otaRepoMessage" class="hint">Nhac tự kiểm tra phiên bản mới qua GitHub Releases.</p>
+      <div id="otaManualRepoFields" class="two-fields">
+        <label>GitHub owner <input type="text" id="githubOwner" placeholder="Tên tài khoản"></label>
+        <label>Repository <input type="text" id="githubRepo" placeholder="Tên repo"></label>
+      </div>
+      <div class="controls"><button id="btnSaveRepo" type="button">Lưu địa chỉ repo</button><button type="button" class="outline" id="btnCheckUpdateSettings">Kiểm tra ngay</button></div>
+      <p id="settingsUpdateStatus" class="hint" role="status"></p>
+    </section>
+  </dialog>
+
+  <dialog id="updateDialog" class="modal">
+    <div class="modal-top"><h2>Cập nhật Nhac</h2><button id="btnCloseUpdate" type="button" class="close-btn" aria-label="Đóng">✕</button></div>
+    <p id="updateStatus" role="status">Đang kiểm tra...</p>
+    <p id="updateNotes" class="hint"></p>
+    <div class="controls"><button id="btnDownloadUpdate" type="button" hidden>Tải &amp; cài APK</button><button id="btnDismissUpdate" type="button" class="outline">Đóng</button></div>
+    <p class="hint">Android yêu cầu bạn xác nhận cài APK. Giữ cùng chữ ký ứng dụng để cập nhật mà không mất dữ liệu.</p>
+  </dialog>
+
+  <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
+</body>
+</html>

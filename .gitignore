@@ -1,0 +1,14 @@
+.gradle/
+.idea/
+.local-gradle/
+local.properties
+build/
+app/build/
+*.iml
+*.keystore
+*.jks
+*.apk
+.DS_Store
+*.p12
+NHAC_SIGNING_BUNDLE.txt
+NHAC-KHOA-KY/

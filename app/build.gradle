@@ -1,0 +1,48 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'vn.nhac.offline'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'vn.nhac.offline'
+        minSdk 26
+        targetSdk 35
+        versionCode 1000001
+        versionName '1.0.1'
+    }
+
+    signingConfigs {
+        release {
+            def keyfile = System.getenv('NHAC_KEYSTORE_FILE')
+            if (keyfile) {
+                storeFile file(keyfile)
+                storePassword System.getenv('NHAC_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('NHAC_KEY_ALIAS')
+                keyPassword System.getenv('NHAC_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+    buildFeatures { buildConfig true }
+    androidResources {
+        noCompress += ['mp3']
+    }
+    applicationVariants.all { variant ->
+        variant.outputs.all { outputFileName = "NHAC-V${variant.versionName}.apk" }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+    implementation 'androidx.core:core:1.15.0'
+}

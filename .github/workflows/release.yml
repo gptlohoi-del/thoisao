@@ -1,0 +1,56 @@
+name: Phat hanh APK Nhac (OTA)
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Phien ban moi (vi du 1.0.1; lan sau 1.0.2)'
+        required: true
+        default: '1.0.1'
+        type: string
+permissions:
+  contents: write
+concurrency:
+  group: nhac-release-${{ inputs.version }}
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test SRT
+        run: node --test tests/*.test.js
+      - name: Prepare version, OTA repository and signing key
+        env:
+          NHAC_RELEASE_VERSION: ${{ inputs.version }}
+          NHAC_SIGNING_BUNDLE: ${{ secrets.NHAC_SIGNING_BUNDLE }}
+        run: python3 scripts/prepare_release.py
+      - name: Build signed APK
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Verify APK file
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/NHAC-V${RELEASE_VERSION}.apk"
+          test -s "$APK"
+          sha256sum "$APK"
+      - name: Publish OTA on GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="v${RELEASE_VERSION}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists. Choose a newer version."; exit 1
+          fi
+          gh release create "$TAG" "app/build/outputs/apk/release/NHAC-V${RELEASE_VERSION}.apk" \
+            --target "${GITHUB_SHA}" --title "Nhac v${RELEASE_VERSION}" --generate-notes
